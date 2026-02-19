@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<analyzerinfo hash="5067163576853997369">
+  <FileInfo check="ctu">
+<function-call call-id="/Users/ramus/OSU/Winter2026/ECE342/object-detector/display/main/ssd1306.h:21:6" call-funcname="display_show_time" call-argnr="1" file="/Users/ramus/OSU/Winter2026/ECE342/object-detector/display/main/display.c" line="55" col="26" call-argexpr="elapsed_s" call-argvaluetype="0" call-argvalue="0" call-argvalue-ufr="0">
+  <path file="/Users/ramus/OSU/Winter2026/ECE342/object-detector/display/main/display.c" line="52" col="26" info="Assignment &apos;elapsed_s=0&apos;, assigned value is 0"/>
+</function-call>  </FileInfo>
+</analyzerinfo>

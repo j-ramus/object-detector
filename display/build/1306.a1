@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<analyzerinfo hash="2867837148104698301">
+        <error id="normalCheckLevelMaxBranches" severity="information" msg="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." verbose="Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches." file0="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c">
+            <location file="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c" line="0" column="0"/>
+        </error>
+  <FileInfo check="ctu">
+<function-call call-id="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c:44:18" call-funcname="send_cmd" call-argnr="1" file="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c" line="77" col="29" call-argexpr="0" call-argvaluetype="0" call-argvalue="0" call-argvalue-ufr="0"/><function-call call-id="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c:44:18" call-funcname="send_cmd" call-argnr="1" file="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c" line="78" col="29" call-argexpr="0" call-argvaluetype="0" call-argvalue="0" call-argvalue-ufr="0"/>  </FileInfo>
+  <FileInfo check="Null pointer">
+    <unsafe-usage my-id="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c:87:13" my-argnr="1" my-argname="font" file="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c" line="90" col="14" value="0"/>
+  </FileInfo>
+  <FileInfo check="Uninitialized variables">
+    <unsafe-usage my-id="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c:87:13" my-argnr="1" my-argname="font" file="/Users/ramus/OSU/Winter2026/ECE342/project/1306.c" line="90" col="14" value="0"/>
+  </FileInfo>
+</analyzerinfo>

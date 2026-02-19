@@ -1,0 +1,5 @@
+button_isr global:[s_button_task] call:[portYIELD_FROM_ISR,vTaskNotifyGiveFromISR] noreturn:[portYIELD_FROM_ISR]
+button_task global:[TAG] call:[ESP_LOGI,display_cycle_brightness,pdMS_TO_TICKS,ulTaskNotifyTake,vTaskDelay] noreturn:[ulTaskNotifyTake]
+init_button call:[gpio_config,gpio_install_isr_service,gpio_isr_handler_add] noreturn:[gpio_isr_handler_add]
+timer_task call:[display_show_time,pdMS_TO_TICKS,vTaskDelay]
+app_main global:[TAG,s_button_task] call:[ESP_LOGE,display_init,display_set_brightness,esp_err_to_name,init_button,xTaskCreate] noreturn:[xTaskCreate]
