@@ -1,0 +1,88 @@
+Command: C:\Espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe C:\Espressif\frameworks\esp-idf-v5.5.2\tools/idf_monitor.py -p COM7 -b 115200 --toolchain-prefix xtensa-esp32-elf- --target esp32 --revision 0 C:\Users\ngerb\esp\MC\build\MC.elf C:\Users\ngerb\esp\MC\build\bootloader\bootloader.elf --force-color -m 'C:\Espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe' 'C:\Espressif\frameworks\esp-idf-v5.5.2\tools\idf.py' '-p' 'COM7'
+[0;33m--- Warning: GDB cannot open serial ports accessed as COMx[0m
+[0;33m--- Using \\.\COM7 instead...[0m
+[0;33m--- esp-idf-monitor 1.9.0 on \\.\COM7 115200[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H[0m
+[0m--- 0x40080400: [0;33m_invalid_pc_placeholder[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m2235[0m
+[0m--- 0x40080644: [0;33mcall_start_cpu0[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m25[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x40085519: [0;33mpanic_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/panic.c[0m[0m:[1;31m477[0m
+[0m--- 0x400854e1: [0;33mesp_system_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/port/esp_system_chip.c[0m[0m:[1;31m87[0m
+[0m--- 0x4008b44d: [0;33mabort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/abort.c[0m[0m:[1;31m38[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x400824bd: [0;33m_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m174[0m
+[0m--- 0x40082536: [0;33m__retarget_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m333[0m
+[0m--- 0x400d98eb: [0;33m_puts_r[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m89[0m
+[0m--- 0x400d992a: [0;33mputs[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m129[0m
+[0m--- 0x400825f2: [0;33mdec_time_isr_handler[0m[0m at [0;32mC:/Users/ngerb/esp/MC/main/MC.c[0m[0m:[1;31m61[0m
+[0m--- 0x40082bfe: [0;33mgpio_isr_loop[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m494[0m
+[0m--- 0x40082c8e: [0;33mgpio_intr_service[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m516[0m
+[0m--- 0x400829ad: [0;33m_xt_lowint1[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m1240[0m
+[0m--- 0x40083ecb: [0;33mxt_utils_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/include/xt_utils.h[0m[0m:[1;31m82[0m
+[0m--- (inlined by) [0;33mesp_cpu_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_hw_support/cpu.c[0m[0m:[1;31m55[0m
+[0m--- 0x400df8ef: [0;33mesp_vApplicationIdleHook[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/freertos_hooks.c[0m[0m:[1;31m58[0m
+[0m--- 0x40086c9a: [0;33mprvIdleTask[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/tasks.c[0m[0m:[1;31m4350[0m
+[0m--- 0x40085ee9: [0;33mvPortTaskWrapper[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c[0m[0m:[1;31m139[0m
+[0m--- 0x40080400: [0;33m_invalid_pc_placeholder[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m2235[0m
+[0m--- 0x40080644: [0;33mcall_start_cpu0[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m25[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x40085519: [0;33mpanic_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/panic.c[0m[0m:[1;31m477[0m
+[0m--- 0x400854e1: [0;33mesp_system_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/port/esp_system_chip.c[0m[0m:[1;31m87[0m
+[0m--- 0x4008b44d: [0;33mabort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/abort.c[0m[0m:[1;31m38[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x400824bd: [0;33m_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m174[0m
+[0m--- 0x40082536: [0;33m__retarget_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m333[0m
+[0m--- 0x400d98eb: [0;33m_puts_r[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m89[0m
+[0m--- 0x400d992a: [0;33mputs[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m129[0m
+[0m--- 0x400825f2: [0;33mdec_time_isr_handler[0m[0m at [0;32mC:/Users/ngerb/esp/MC/main/MC.c[0m[0m:[1;31m61[0m
+[0m--- 0x40082bfe: [0;33mgpio_isr_loop[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m494[0m
+[0m--- 0x40082c8e: [0;33mgpio_intr_service[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m516[0m
+[0m--- 0x400829ad: [0;33m_xt_lowint1[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m1240[0m
+[0m--- 0x40083ecb: [0;33mxt_utils_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/include/xt_utils.h[0m[0m:[1;31m82[0m
+[0m--- (inlined by) [0;33mesp_cpu_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_hw_support/cpu.c[0m[0m:[1;31m55[0m
+[0m--- 0x400df8ef: [0;33mesp_vApplicationIdleHook[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/freertos_hooks.c[0m[0m:[1;31m58[0m
+[0m--- 0x40086c9a: [0;33mprvIdleTask[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/tasks.c[0m[0m:[1;31m4350[0m
+[0m--- 0x40085ee9: [0;33mvPortTaskWrapper[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c[0m[0m:[1;31m139[0m
+[0m--- 0x40080400: [0;33m_invalid_pc_placeholder[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m2235[0m
+[0m--- 0x40080644: [0;33mcall_start_cpu0[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m25[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x40085519: [0;33mpanic_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/panic.c[0m[0m:[1;31m477[0m
+[0m--- 0x400854e1: [0;33mesp_system_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/port/esp_system_chip.c[0m[0m:[1;31m87[0m
+[0m--- 0x4008b44d: [0;33mabort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/abort.c[0m[0m:[1;31m38[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x400824bd: [0;33m_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m174[0m
+[0m--- 0x40082536: [0;33m__retarget_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m333[0m
+[0m--- 0x400d98eb: [0;33m_puts_r[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m89[0m
+[0m--- 0x400d992a: [0;33mputs[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m129[0m
+[0m--- 0x400825f2: [0;33mdec_time_isr_handler[0m[0m at [0;32mC:/Users/ngerb/esp/MC/main/MC.c[0m[0m:[1;31m61[0m
+[0m--- 0x40082bfe: [0;33mgpio_isr_loop[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m494[0m
+[0m--- 0x40082c8e: [0;33mgpio_intr_service[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m516[0m
+[0m--- 0x400829ad: [0;33m_xt_lowint1[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m1240[0m
+[0m--- 0x40083ecb: [0;33mxt_utils_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/include/xt_utils.h[0m[0m:[1;31m82[0m
+[0m--- (inlined by) [0;33mesp_cpu_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_hw_support/cpu.c[0m[0m:[1;31m55[0m
+[0m--- 0x400df8ef: [0;33mesp_vApplicationIdleHook[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/freertos_hooks.c[0m[0m:[1;31m58[0m
+[0m--- 0x40086c9a: [0;33mprvIdleTask[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/tasks.c[0m[0m:[1;31m4350[0m
+[0m--- 0x40085ee9: [0;33mvPortTaskWrapper[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c[0m[0m:[1;31m139[0m
+[0m--- 0x40080400: [0;33m_invalid_pc_placeholder[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m2235[0m
+[0m--- 0x40080644: [0;33mcall_start_cpu0[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m25[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x40085519: [0;33mpanic_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/panic.c[0m[0m:[1;31m477[0m
+[0m--- 0x400854e1: [0;33mesp_system_abort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/port/esp_system_chip.c[0m[0m:[1;31m87[0m
+[0m--- 0x4008b44d: [0;33mabort[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/abort.c[0m[0m:[1;31m38[0m
+[0m--- 0x4008237f: [0;33mlock_acquire_generic[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m145[0m
+[0m--- 0x400824bd: [0;33m_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m174[0m
+[0m--- 0x40082536: [0;33m__retarget_lock_acquire_recursive[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/newlib/src/locks.c[0m[0m:[1;31m333[0m
+[0m--- 0x400d98eb: [0;33m_puts_r[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m89[0m
+[0m--- 0x400d992a: [0;33mputs[0m[0m at [0;32m/builds/idf/crosstool-NG/.build/xtensa-esp-elf/src/newlib/newlib/libc/stdio/puts.c[0m[0m:[1;31m129[0m
+[0m--- 0x4008260e: [0;33minc_time_isr_handler[0m[0m at [0;32mC:/Users/ngerb/esp/MC/main/MC.c[0m[0m:[1;31m52[0m
+[0m--- 0x40082bfe: [0;33mgpio_isr_loop[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m494[0m
+[0m--- 0x40082c8e: [0;33mgpio_intr_service[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_driver_gpio/src/gpio.c[0m[0m:[1;31m516[0m
+[0m--- 0x400829ad: [0;33m_xt_lowint1[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m1240[0m
+[0m--- 0x40083ecb: [0;33mxt_utils_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/include/xt_utils.h[0m[0m:[1;31m82[0m
+[0m--- (inlined by) [0;33mesp_cpu_wait_for_intr[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_hw_support/cpu.c[0m[0m:[1;31m55[0m
+[0m--- 0x400df8ef: [0;33mesp_vApplicationIdleHook[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/esp_system/freertos_hooks.c[0m[0m:[1;31m58[0m
+[0m--- 0x40086c9a: [0;33mprvIdleTask[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/tasks.c[0m[0m:[1;31m4350[0m
+[0m--- 0x40085ee9: [0;33mvPortTaskWrapper[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c[0m[0m:[1;31m139[0m
+[0m--- 0x40080400: [0;33m_invalid_pc_placeholder[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/xtensa/xtensa_vectors.S[0m[0m:[1;31m2235[0m
+[0m--- 0x40080644: [0;33mcall_start_cpu0[0m[0m at [0;32mC:/Espressif/frameworks/esp-idf-v5.5.2/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m25[0m
+[0m
