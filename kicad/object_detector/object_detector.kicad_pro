@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 2.2,
-          "height": 2.2,
-          "width": 2.2
+          "drill": 0.75,
+          "height": 1.75,
+          "width": 1.2
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -58,12 +58,7 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [
-        [
-          "missing_courtyard|150000000|75000000|de2496e8-5076-4fe9-abed-ca6bbb113f5b|00000000-0000-0000-0000-000000000000",
-          "Image, doesn't need courtyard"
-        ]
-      ],
+      "drc_exclusions": [],
       "meta": {
         "version": 2
       },
