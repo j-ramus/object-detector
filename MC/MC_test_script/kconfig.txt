@@ -1,0 +1,5 @@
+mainmenu "Script Select"
+
+    config MESSAGE
+        string "Display"
+        default "GPIO is active"
