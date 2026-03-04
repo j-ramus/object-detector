@@ -90,7 +90,7 @@ static void draw_char(const GFXfont *font, char c, int cursor_x, int cursor_y)
 
     //rows then columns, consume bits MSB first
     uint8_t byte_val = 0;
-    uint8_t bit = 0;   // current bit mask: 0 means fetch next byte
+    uint8_t bit = 0;   // current bit mask: 0 means get next byte
 
     for (int row = 0; row < g->height; row++) {
         for (int col = 0; col < g->width; col++) {
@@ -143,7 +143,7 @@ esp_err_t display_init(void)
         0xA8, 0x3F,  // multiplex ratio = 63 (64-row panel)
         0xD3, 0x00,  // display vertical offset = 0
         0x40,        // display start line = 0
-        0x8D, 0x14,  // charge pump ON 
+        0x8D, 0x14,  // charge pump on 
         0x20, 0x00,  // memory addressing mode: horizontal
         0xA1,        // segment remap: column 127 → SEG0
         0xC8,        // COM scan: remapped direction

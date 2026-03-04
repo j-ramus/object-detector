@@ -1,1 +1,1 @@
-display.a1:::/Users/ramus/OSU/Winter2026/ECE342/object-detector/display/main/display.c
+ssd1306.a1:::/Users/ramus/OSU/Winter2026/ECE342/object-detector/display/main/ssd1306.c

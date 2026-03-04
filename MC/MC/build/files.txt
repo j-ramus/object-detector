@@ -1,0 +1,1 @@
+MC.a1:::/Users/ramus/OSU/Winter2026/ECE342/object-detector/MC/MC/main/MC.c
