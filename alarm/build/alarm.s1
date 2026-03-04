@@ -1,3 +1,0 @@
-dac_timer_callback global:[dac_handle,sample_index,sawtooth_table,tone_enabled] call:[dac_oneshot_output_voltage] noreturn:[dac_oneshot_output_voltage]
-button_task global:[tone_enabled] call:[gpio_get_level,pdMS_TO_TICKS,vTaskDelay] noreturn:[vTaskDelay]
-app_main global:[dac_handle] call:[dac_oneshot_new_channel,esp_timer_create,esp_timer_start_periodic,gpio_config,xTaskCreate] noreturn:[xTaskCreate]

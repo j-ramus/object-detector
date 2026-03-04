@@ -1,1 +1,0 @@
-alarm.a1:::/Users/ramus/OSU/Winter2026/ECE342/object-detector/alarm/main/alarm.c
