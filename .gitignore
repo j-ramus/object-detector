@@ -1,2 +1,5 @@
 # Build output directories
 **/build/
+
+# macOS metadata
+.DS_Store
