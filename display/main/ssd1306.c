@@ -4,46 +4,151 @@
 #include <string.h>
 #include "driver/i2c.h"
 #include "esp_log.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
 #define COLS    DISPLAY_WIDTH
-#define PAGES   (DISPLAY_HEIGHT / 8)    //8 pages * 8 rows = 64 rows
+#define PAGES   (DISPLAY_HEIGHT / 8)    // 8 pages * 8 rows = 64 rows
 
+static const char *TAG = "ssd1306";
 
-static const char *TAG = "display";
 
 static const uint8_t BRIGHTNESS[3][3] = {
-    {0x00, 0x11, 0x00},  // low  
-    {0x8F, 0x81, 0x20},  //med 
-    {0xFF, 0xF1, 0x40},  //high
+    {0x00, 0x11, 0x00},  // low
+    {0x8F, 0x81, 0x20},  // med
+    {0xFF, 0xF1, 0x40},  // high
 };
 
-
-//frame buffer: page 0-7 column 0-127
-// bit N of s_buf[page][col] = pixel at row page*8 + N
+// Frame buffer: s_buf[page][col], bit N = pixel at row page*8+N
 static uint8_t s_buf[PAGES][COLS];
-static volatile display_brightness_t s_level  = DISPLAY_BRIGHTNESS_HIGH;
-static volatile bool s_dither = false;  // set for low
-static SemaphoreHandle_t s_mutex  = NULL;
+static volatile display_brightness_t s_level = DISPLAY_BRIGHTNESS_HIGH;
+static volatile bool s_dither = false;
+static SemaphoreHandle_t s_mutex = NULL;
 
+//---------------------------------------------------------------------------
+// 5x7 small font, ASCII 0x20–0x7E (95 chars)
+// Each entry: 5 bytes, one per column; bit 0 = top pixel, bit 6 = bottom pixel
+//--------------------------------------------------------------------------
+static const uint8_t font5x7[95][5] = {
+    { 0x00, 0x00, 0x00, 0x00, 0x00 }, // 0x20 ' '
+    { 0x00, 0x00, 0x5F, 0x00, 0x00 }, // 0x21 '!'
+    { 0x00, 0x07, 0x00, 0x07, 0x00 }, // 0x22 '"'
+    { 0x14, 0x7F, 0x14, 0x7F, 0x14 }, // 0x23 '#'
+    { 0x24, 0x2A, 0x7F, 0x2A, 0x12 }, // 0x24 '$'
+    { 0x23, 0x13, 0x08, 0x64, 0x62 }, // 0x25 '%'
+    { 0x36, 0x49, 0x55, 0x22, 0x50 }, // 0x26 '&'
+    { 0x00, 0x05, 0x03, 0x00, 0x00 }, // 0x27 '\''
+    { 0x00, 0x1C, 0x22, 0x41, 0x00 }, // 0x28 '('
+    { 0x00, 0x41, 0x22, 0x1C, 0x00 }, // 0x29 ')'
+    { 0x14, 0x08, 0x3E, 0x08, 0x14 }, // 0x2A '*'
+    { 0x08, 0x08, 0x3E, 0x08, 0x08 }, // 0x2B '+'
+    { 0x00, 0x50, 0x30, 0x00, 0x00 }, // 0x2C ','
+    { 0x08, 0x08, 0x08, 0x08, 0x08 }, // 0x2D '-'
+    { 0x00, 0x60, 0x60, 0x00, 0x00 }, // 0x2E '.'
+    { 0x20, 0x10, 0x08, 0x04, 0x02 }, // 0x2F '/'
+    { 0x3E, 0x51, 0x49, 0x45, 0x3E }, // 0x30 '0'
+    { 0x00, 0x42, 0x7F, 0x40, 0x00 }, // 0x31 '1'
+    { 0x42, 0x61, 0x51, 0x49, 0x46 }, // 0x32 '2'
+    { 0x21, 0x41, 0x45, 0x4B, 0x31 }, // 0x33 '3'
+    { 0x18, 0x14, 0x12, 0x7F, 0x10 }, // 0x34 '4'
+    { 0x27, 0x45, 0x45, 0x45, 0x39 }, // 0x35 '5'
+    { 0x3C, 0x4A, 0x49, 0x49, 0x30 }, // 0x36 '6'
+    { 0x01, 0x71, 0x09, 0x05, 0x03 }, // 0x37 '7'
+    { 0x36, 0x49, 0x49, 0x49, 0x36 }, // 0x38 '8'
+    { 0x06, 0x49, 0x49, 0x29, 0x1E }, // 0x39 '9'
+    { 0x00, 0x36, 0x36, 0x00, 0x00 }, // 0x3A ':'
+    { 0x00, 0x56, 0x36, 0x00, 0x00 }, // 0x3B ';'
+    { 0x08, 0x14, 0x22, 0x41, 0x00 }, // 0x3C '<'
+    { 0x14, 0x14, 0x14, 0x14, 0x14 }, // 0x3D '='
+    { 0x00, 0x41, 0x22, 0x14, 0x08 }, // 0x3E '>'
+    { 0x02, 0x01, 0x51, 0x09, 0x06 }, // 0x3F '?'
+    { 0x32, 0x49, 0x79, 0x41, 0x3E }, // 0x40 '@'
+    { 0x7E, 0x11, 0x11, 0x11, 0x7E }, // 0x41 'A'
+    { 0x7F, 0x49, 0x49, 0x49, 0x36 }, // 0x42 'B'
+    { 0x3E, 0x41, 0x41, 0x41, 0x22 }, // 0x43 'C'
+    { 0x7F, 0x41, 0x41, 0x22, 0x1C }, // 0x44 'D'
+    { 0x7F, 0x49, 0x49, 0x49, 0x41 }, // 0x45 'E'
+    { 0x7F, 0x09, 0x09, 0x09, 0x01 }, // 0x46 'F'
+    { 0x3E, 0x41, 0x49, 0x49, 0x7A }, // 0x47 'G'
+    { 0x7F, 0x08, 0x08, 0x08, 0x7F }, // 0x48 'H'
+    { 0x00, 0x41, 0x7F, 0x41, 0x00 }, // 0x49 'I'
+    { 0x20, 0x40, 0x41, 0x3F, 0x01 }, // 0x4A 'J'
+    { 0x7F, 0x08, 0x14, 0x22, 0x41 }, // 0x4B 'K'
+    { 0x7F, 0x40, 0x40, 0x40, 0x40 }, // 0x4C 'L'
+    { 0x7F, 0x02, 0x0C, 0x02, 0x7F }, // 0x4D 'M'
+    { 0x7F, 0x04, 0x08, 0x10, 0x7F }, // 0x4E 'N'
+    { 0x3E, 0x41, 0x41, 0x41, 0x3E }, // 0x4F 'O'
+    { 0x7F, 0x09, 0x09, 0x09, 0x06 }, // 0x50 'P'
+    { 0x3E, 0x41, 0x51, 0x21, 0x5E }, // 0x51 'Q'
+    { 0x7F, 0x09, 0x19, 0x29, 0x46 }, // 0x52 'R'
+    { 0x46, 0x49, 0x49, 0x49, 0x31 }, // 0x53 'S'
+    { 0x01, 0x01, 0x7F, 0x01, 0x01 }, // 0x54 'T'
+    { 0x3F, 0x40, 0x40, 0x40, 0x3F }, // 0x55 'U'
+    { 0x1F, 0x20, 0x40, 0x20, 0x1F }, // 0x56 'V'
+    { 0x3F, 0x40, 0x38, 0x40, 0x3F }, // 0x57 'W'
+    { 0x63, 0x14, 0x08, 0x14, 0x63 }, // 0x58 'X'
+    { 0x07, 0x08, 0x70, 0x08, 0x07 }, // 0x59 'Y'
+    { 0x61, 0x51, 0x49, 0x45, 0x43 }, // 0x5A 'Z'
+    { 0x00, 0x7F, 0x41, 0x41, 0x00 }, // 0x5B '['
+    { 0x02, 0x04, 0x08, 0x10, 0x20 }, // 0x5C '\'
+    { 0x00, 0x41, 0x41, 0x7F, 0x00 }, // 0x5D ']'
+    { 0x04, 0x02, 0x01, 0x02, 0x04 }, // 0x5E '^'
+    { 0x40, 0x40, 0x40, 0x40, 0x40 }, // 0x5F '_'
+    { 0x00, 0x01, 0x02, 0x04, 0x00 }, // 0x60 '`'
+    { 0x20, 0x54, 0x54, 0x54, 0x78 }, // 0x61 'a'
+    { 0x7F, 0x48, 0x44, 0x44, 0x38 }, // 0x62 'b'
+    { 0x38, 0x44, 0x44, 0x44, 0x20 }, // 0x63 'c'
+    { 0x38, 0x44, 0x44, 0x48, 0x7F }, // 0x64 'd'
+    { 0x38, 0x54, 0x54, 0x54, 0x18 }, // 0x65 'e'
+    { 0x08, 0x7E, 0x09, 0x01, 0x02 }, // 0x66 'f'
+    { 0x08, 0x54, 0x54, 0x54, 0x3C }, // 0x67 'g'
+    { 0x7F, 0x08, 0x04, 0x04, 0x78 }, // 0x68 'h'
+    { 0x00, 0x44, 0x7D, 0x40, 0x00 }, // 0x69 'i'
+    { 0x20, 0x40, 0x44, 0x3D, 0x00 }, // 0x6A 'j'
+    { 0x7F, 0x10, 0x28, 0x44, 0x00 }, // 0x6B 'k'
+    { 0x00, 0x41, 0x7F, 0x40, 0x00 }, // 0x6C 'l'
+    { 0x7C, 0x04, 0x18, 0x04, 0x78 }, // 0x6D 'm'
+    { 0x7C, 0x08, 0x04, 0x04, 0x78 }, // 0x6E 'n'
+    { 0x38, 0x44, 0x44, 0x44, 0x38 }, // 0x6F 'o'
+    { 0x7C, 0x14, 0x14, 0x14, 0x08 }, // 0x70 'p'
+    { 0x08, 0x14, 0x14, 0x14, 0x7C }, // 0x71 'q'
+    { 0x7C, 0x08, 0x04, 0x04, 0x08 }, // 0x72 'r'
+    { 0x48, 0x54, 0x54, 0x54, 0x20 }, // 0x73 's'
+    { 0x04, 0x3F, 0x44, 0x40, 0x20 }, // 0x74 't'
+    { 0x3C, 0x40, 0x40, 0x20, 0x7C }, // 0x75 'u'
+    { 0x1C, 0x20, 0x40, 0x20, 0x1C }, // 0x76 'v'
+    { 0x3C, 0x40, 0x30, 0x40, 0x3C }, // 0x77 'w'
+    { 0x44, 0x28, 0x10, 0x28, 0x44 }, // 0x78 'x'
+    { 0x0C, 0x50, 0x50, 0x50, 0x3C }, // 0x79 'y'
+    { 0x44, 0x64, 0x54, 0x4C, 0x44 }, // 0x7A 'z'
+    { 0x00, 0x08, 0x36, 0x41, 0x00 }, // 0x7B '{'
+    { 0x00, 0x00, 0x7F, 0x00, 0x00 }, // 0x7C '|'
+    { 0x00, 0x41, 0x36, 0x08, 0x00 }, // 0x7D '}'
+    { 0x10, 0x08, 0x08, 0x10, 0x08 }, // 0x7E '~'
+};
+
+//-------------------------------------------------------------------
+// helper fucntions
+//-------------------------------------------------------------------
 
 static esp_err_t send_cmd(uint8_t cmd)
 {
     i2c_cmd_handle_t h = i2c_cmd_link_create();
+
     i2c_master_start(h);
     i2c_master_write_byte(h, (DISPLAY_I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(h, 0x00, true); 
+    i2c_master_write_byte(h, 0x00, true);
     i2c_master_write_byte(h, cmd,  true);
     i2c_master_stop(h);
+
     esp_err_t ret = i2c_master_cmd_begin(DISPLAY_I2C_PORT, h, pdMS_TO_TICKS(10));
     i2c_cmd_link_delete(h);
 
+
     return ret;
 }
-
-
 
 static esp_err_t send_data(const uint8_t *data, size_t len)
 {
@@ -51,22 +156,22 @@ static esp_err_t send_data(const uint8_t *data, size_t len)
 
     i2c_master_start(h);
     i2c_master_write_byte(h, (DISPLAY_I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(h, 0x40, true); 
+    i2c_master_write_byte(h, 0x40, true);
     i2c_master_write(h, data, len, true);
     i2c_master_stop(h);
+
     esp_err_t ret = i2c_master_cmd_begin(DISPLAY_I2C_PORT, h, pdMS_TO_TICKS(50));
+
     i2c_cmd_link_delete(h);
+
 
     return ret;
 }
 
-
-// Push whole frame buffer to dislay
 static void flush(void)
 {
-    send_cmd(0x21); send_cmd(0);       send_cmd(COLS  - 1);  
+    send_cmd(0x21); send_cmd(0);       send_cmd(COLS  - 1);
     send_cmd(0x22); send_cmd(0);       send_cmd(PAGES - 1);
-
     for (int p = 0; p < PAGES; p++) {
         send_data(s_buf[p], COLS);
     }
@@ -74,38 +179,28 @@ static void flush(void)
 
 
 
-
-//one character  into the frame buffer
-//  no row padding.
 static void draw_char(const GFXfont *font, char c, int cursor_x, int cursor_y)
 {
     uint8_t uc = (uint8_t)c;
     if (uc < font->first || uc > font->last) return;
 
-    const GFXglyph *g = &font->glyph[uc - font->first];
+    const GFXglyph *g   = &font->glyph[uc - font->first];
     const uint8_t  *bmp = &font->bitmap[g->bitmapOffset];
-
     int x0 = cursor_x + g->xOffset;
     int y0 = cursor_y + g->yOffset;
 
-    //rows then columns, consume bits MSB first
     uint8_t byte_val = 0;
-    uint8_t bit = 0;   // current bit mask: 0 means get next byte
+    uint8_t bit = 0;
 
     for (int row = 0; row < g->height; row++) {
         for (int col = 0; col < g->width; col++) {
-            if (bit == 0) {
-                byte_val = *bmp++;
-                bit = 0x80;
-            }
+            if (bit == 0) { byte_val = *bmp++; bit = 0x80; }
 
             if (byte_val & bit) {
                 int px = x0 + col;
                 int py = y0 + row;
 
-                if (s_dither && ((px + py) & 1)) { 
-                    bit >>= 1; continue; 
-                }
+                if (s_dither && ((px + py) & 1)) { bit >>= 1; continue; }
 
                 if (px >= 0 && px < COLS && py >= 0 && py < DISPLAY_HEIGHT) {
                     s_buf[py >> 3][px] |= (uint8_t)(1u << (py & 7));
@@ -117,44 +212,71 @@ static void draw_char(const GFXfont *font, char c, int cursor_x, int cursor_y)
 }
 
 
-
-esp_err_t display_init(void)
+// render small font str centerd in given page row (0–7)
+static void draw_small_text(int page, const char *text)
 {
+    size_t len = strlen(text);
+    if (len == 0) return;
+
+    // each char is 5px wide + 1px gap; no trailing gap on last char
+    int text_px = (int)len * 6 - 1;
+    int col = (COLS - text_px) / 2;
+    if (col < 0) col = 0;
+
+    for (size_t i = 0; i < len && col + 5 <= COLS; i++) {
+        uint8_t c = (uint8_t)text[i];
+        if (c < 0x20 || c > 0x7E) c = '?';
+        const uint8_t *g = font5x7[c - 0x20];
+        for (int j = 0; j < 5; j++) s_buf[page][col++] = g[j];
+        if (i < len - 1 && col < COLS) s_buf[page][col++] = 0x00;
+    }
+}
+
+//-----------------------------------------------------
+// public functions
+//---------------------------------------------------------
+
+esp_err_t ssd1306_init(void)
+{
+
     s_mutex = xSemaphoreCreateMutex();
+
     if (!s_mutex) return ESP_ERR_NO_MEM;
 
     i2c_config_t cfg = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = DISPLAY_SDA_PIN,
         .scl_io_num = DISPLAY_SCL_PIN,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .sda_pullup_en  = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en  = GPIO_PULLUP_ENABLE,
         .master.clk_speed = DISPLAY_I2C_FREQ,
     };
+
+
     ESP_ERROR_CHECK(i2c_param_config(DISPLAY_I2C_PORT, &cfg));
     ESP_ERROR_CHECK(i2c_driver_install(DISPLAY_I2C_PORT, I2C_MODE_MASTER, 0, 0, 0));
 
-    vTaskDelay(pdMS_TO_TICKS(100));  // wait for display power-up
+    vTaskDelay(pdMS_TO_TICKS(100));
 
-    // SSD1306 initialisation sequence
     static const uint8_t cmds[] = {
         0xAE,        // display off
-        0xD5, 0x80,  // clock divide ratio / oscillator frequency
-        0xA8, 0x3F,  // multiplex ratio = 63 (64-row panel)
-        0xD3, 0x00,  // display vertical offset = 0
-        0x40,        // display start line = 0
-        0x8D, 0x14,  // charge pump on 
-        0x20, 0x00,  // memory addressing mode: horizontal
-        0xA1,        // segment remap: column 127 → SEG0
-        0xC8,        // COM scan: remapped direction
-        0xDA, 0x12,  // COM pins hardware config (alternate, 128×64)
-        0x81, 0xFF,  // contrast = 255 at startup
-        0xD9, 0xF1,  // pre-charge period
-        0xDB, 0x40,  // VCOM deselect level
-        0xA4,        // output follows RAM content
-        0xA6,        // normal (non-inverted) display
+        0xD5, 0x80,  // clock divide / osc freq
+        0xA8, 0x3F,  // multiplex ratio 63
+        0xD3, 0x00,  // display offset 0
+        0x40,        // start line 0
+        0x8D, 0x14,  // charge pump on
+        0x20, 0x00,  // horizontal addressing
+        0xA1,        // segment remap
+        0xC8,        // COM scan remapped
+        0xDA, 0x12,  // COM pins config
+        0x81, 0xFF,  // max contrast
+        0xD9, 0xF1,  // pre-charge
+        0xDB, 0x40,  // VCOM deselect
+        0xA4,        // output follows RAM
+        0xA6,        // normal (non-inverted)
         0xAF,        // display on
     };
+
 
     for (size_t i = 0; i < sizeof(cmds); i++) {
         esp_err_t ret = send_cmd(cmds[i]);
@@ -164,42 +286,52 @@ esp_err_t display_init(void)
         }
     }
 
-    display_clear();
-
+    ssd1306_clear();
     return ESP_OK;
 }
 
-
-
-
-
-void display_set_brightness(display_brightness_t level)
+void ssd1306_set_brightness(display_brightness_t level)
 {
     if ((unsigned)level >= 3) return;
 
     xSemaphoreTake(s_mutex, portMAX_DELAY);
+
     s_level  = level;
     s_dither = (level == DISPLAY_BRIGHTNESS_LOW);
-    send_cmd(0x81); send_cmd(BRIGHTNESS[level][0]);  
-    send_cmd(0xD9); send_cmd(BRIGHTNESS[level][1]); 
+
+    send_cmd(0x81); send_cmd(BRIGHTNESS[level][0]);
+    send_cmd(0xD9); send_cmd(BRIGHTNESS[level][1]);
     send_cmd(0xDB); send_cmd(BRIGHTNESS[level][2]);
 
     xSemaphoreGive(s_mutex);
 }
 
-void display_cycle_brightness(void)
+
+
+
+
+
+
+void ssd1306_cycle_brightness(void)
 {
-    display_set_brightness((display_brightness_t)((s_level + 1) % 3));
+    ssd1306_set_brightness((display_brightness_t)((s_level + 1) % 3));
 }
 
-void display_show_time(uint32_t total_seconds)
-{
-    if (total_seconds > 5999) total_seconds = 5999;  //limit 99:59
 
-    uint8_t mins = (uint8_t)(total_seconds / 60);
-    uint8_t secs = (uint8_t)(total_seconds % 60);
+
+
+void ssd1306_render_frame(uint32_t seconds, bool colon_visible,
+                          const char *top, const char *bottom,
+                          bool inverted)
+{
+    if (seconds > 5999) seconds = 5999;
+
+    uint8_t mins = (uint8_t)(seconds / 60);
+
+    uint8_t secs = (uint8_t)(seconds % 60);
 
     char buf[6];
+
     buf[0] = '0' + mins / 10;
     buf[1] = '0' + mins % 10;
     buf[2] = ':';
@@ -207,26 +339,39 @@ void display_show_time(uint32_t total_seconds)
     buf[4] = '0' + secs % 10;
     buf[5] = '\0';
 
+    // cursor centers 5 chars × 21px in the middle of the screen
     int cursor_x = (COLS - 5 * 21) / 2;
     int cursor_y = 42;
 
     xSemaphoreTake(s_mutex, portMAX_DELAY);
+
     memset(s_buf, 0, sizeof(s_buf));
 
+    if (top)    draw_small_text(0, top);//page 0  = rows  0-7
+    if (bottom) draw_small_text(7, bottom);  // page 7  = rows 56-63
+
+    // large time chars: draw each char; skip colon  if blink off
     for (int i = 0; buf[i]; i++) {
-        draw_char(&FreeMonoBold18pt7b, buf[i], cursor_x, cursor_y);
-        cursor_x += 21;  
+        if (buf[i] != ':' || colon_visible) {
+            draw_char(&FreeMonoBold18pt7b, buf[i], cursor_x, cursor_y);
+        }
+        cursor_x += 21;
     }
 
     flush();
+    send_cmd(inverted ? 0xA7 : 0xA6);//invert toggle
+
     xSemaphoreGive(s_mutex);
 }
 
 
-void display_clear(void)
+void ssd1306_clear(void)
 {
     xSemaphoreTake(s_mutex, portMAX_DELAY);
     memset(s_buf, 0, sizeof(s_buf));
+
     flush();
+    send_cmd(0xA6);  //non inverted
+
     xSemaphoreGive(s_mutex);
 }
