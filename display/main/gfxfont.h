@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-// Adafruit GFX font structs — local copy, PROGMEM removed for ESP-IDF.
+// Adafruit GFX font structs, PROGMEM removed for ESP-IDF.
 
 typedef struct {
     uint16_t bitmapOffset;  // offset into font bitmap array
