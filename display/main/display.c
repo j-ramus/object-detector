@@ -1,62 +1,50 @@
-#include <stdio.h>
+#include "display.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "ssd1306.h"
-
-#define BUTTON_PIN  5   
-static const char *TAG = "main";
 
 
-static TaskHandle_t s_button_task = NULL;
 
-static void IRAM_ATTR button_isr(void *arg)
+
+//shared state is written by MC.c, read by display_task
+static volatile display_mode_t s_mode    = DISPLAY_MODE_SETTING;
+static volatile int32_t        s_seconds = 30;
+
+
+static void display_task(void *arg)
 {
-    BaseType_t woken = pdFALSE;
-    vTaskNotifyGiveFromISR(s_button_task, &woken);
-    portYIELD_FROM_ISR(woken);
-}
 
+    bool toggle = false;
 
-static void button_task(void *arg)
-{
     for (;;) {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);//sleep until ISR fires
-        display_cycle_brightness();
-        ESP_LOGI(TAG, "brightness cycled");
-        vTaskDelay(pdMS_TO_TICKS(200));             
-        ulTaskNotifyTake(pdTRUE, 0);    //discard bounces
-    }
-}
+        vTaskDelay(pdMS_TO_TICKS(500));
+        toggle = !toggle;
 
+        switch (s_mode) {
 
-static void init_button(void)
-{
-    gpio_config_t cfg = {
-        .pin_bit_mask = (1ULL << BUTTON_PIN),
-        .mode = GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_NEGEDGE,          
-    };
-    gpio_config(&cfg);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(BUTTON_PIN, button_isr, NULL);
-}
+        case DISPLAY_MODE_SETTING:
+            // Colon blinks every 500 ms 
+            ssd1306_render_frame((uint32_t)s_seconds, toggle,
+                                 "SET TIME", "PLACE ITEM TO START",
+                                 false);
+            break;
 
+        case DISPLAY_MODE_COUNTDOWN:
+            ssd1306_render_frame((uint32_t)s_seconds, true,
+                                 NULL, NULL,
+                                 false);
+            break;
 
+        case DISPLAY_MODE_PAUSED:
+            ssd1306_render_frame((uint32_t)s_seconds, false,
+                                 "RETURN OBJECT", NULL,
+                                 toggle);
+            break;
 
-static void timer_task(void *arg)
-{
-    uint32_t elapsed_s = 0;
-    uint32_t ticks = 0;
-    for (;;) {
-        display_show_time(elapsed_s);
-        vTaskDelay(pdMS_TO_TICKS(100));    
-        if (++ticks >= 10) {                
-            ticks = 0;
-            elapsed_s++;
+        case DISPLAY_MODE_DONE:
+            ssd1306_render_frame(0, false,
+                                 "REMOVE OBJECT", NULL,
+                                 toggle);
+            break;
         }
     }
 }
@@ -65,17 +53,41 @@ static void timer_task(void *arg)
 
 
 
-
-void app_main(void)
+//--------------------------
+// public functions
+//---------------------------
+esp_err_t display_init(void)
 {
-    esp_err_t ret = display_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "display_init failed: %s", esp_err_to_name(ret));
-        return;
-    }
+    esp_err_t ret = ssd1306_init();
+    if (ret != ESP_OK) return ret;
 
-    display_set_brightness(DISPLAY_BRIGHTNESS_HIGH);
-    xTaskCreate(button_task, "button", 2048, NULL, 6, &s_button_task);
-    init_button();
-    xTaskCreate(timer_task, "timer", 4096, NULL, 5, NULL);
+    ssd1306_set_brightness(DISPLAY_BRIGHTNESS_HIGH);
+    xTaskCreate(display_task, "display", 4096, NULL, 5, NULL);
+    return ESP_OK;
 }
+
+
+void display_set_mode(display_mode_t mode)
+{
+    s_mode = mode;
+}
+
+
+
+
+void display_update_time(int32_t seconds)
+{
+    s_seconds = seconds;
+}
+
+
+void display_cycle_brightness(void)
+{
+    ssd1306_cycle_brightness();
+}
+
+
+
+
+
+
