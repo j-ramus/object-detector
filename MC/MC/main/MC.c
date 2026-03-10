@@ -87,6 +87,11 @@ static void sense_task(void* arg)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
+        // 
+// duplicated this here, but inverted to prevent bounce when reenabled
+        if (gpio_get_level(GPIO_SENSE_INPUT) != 0) {
+            continue;   //object not present
+        }
 
         //disable incremental time ISRs
         gpio_intr_disable(GPIO_INC_TIME);
@@ -95,8 +100,12 @@ static void sense_task(void* arg)
 
         //TODO: start countdown
         printf("countdown start\n");
-
         printf("Object detected! countdown started...\n");
+        
+// Added 3/9/26
+        current_mode = DISPLAY_MODE_COUNTDOWN;
+        display_set_mode(DISPLAY_MODE_COUNTDOWN);
+        xTimerStart(countdown_timer, 0);
 
         while (countdown > 0) {
             vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
@@ -140,13 +149,19 @@ static void inc_time_task(void* arg)
 
         vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
 
+        // If pin is hi,  trigger was release bounce, not real press
+        if (gpio_get_level(GPIO_INC_TIME) != 0) {
+            ulTaskNotifyTake(pdTRUE, 0);
+            continue;
+        }
+
         
         printf("in inc_time task...\n"); //FIXME: remove print for final code
 
-        if(set_time < MAX_TIME){
+        if(current_mode == DISPLAY_MODE_SETTING && set_time < MAX_TIME){
         set_time = set_time + INCREMENTAL_TIME;
-        countdown = set_time; //FIXME: remove for johns code
-        
+        countdown = set_time; 
+        display_update_time(set_time); // Just added this part, the rest of this should be good.
         printf("Time increased! Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60)); //FIXME: remove print for final code
         }
     
@@ -166,7 +181,8 @@ static void dec_time_task(void* arg)
 
         if(set_time > MIN_TIME){
         set_time = set_time - INCREMENTAL_TIME;
-        countdown = set_time; //FIXME: remove for johns code
+        countdown = set_time;
+        display_update_time(set_time);
         
         printf("Time decreased! Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60)); //FIXME: remove print for final code
         }
@@ -222,6 +238,13 @@ void app_main(void)
     xTaskCreate(inc_time_task, "inc_time_task", 2048, NULL, 8, &inc_time_handle);
     xTaskCreate(dec_time_task, "dec_time_task", 2048, NULL, 8, &dec_time_handle);
 
+
+    
+    countdown_timer = xtimercreate("countdown", pdms_to_ticks(1000),
+                                    pdtrue, null, countdown_timer_callback);
+
+
+
    /*---------------------------------- ISR Config ---------------------------------------*/   
     //install gpio isr service
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
@@ -238,6 +261,7 @@ void app_main(void)
     //TODO: link set_time to johns code
     set_time = DEFAULT_TIME;
     countdown = set_time;
+    display_update_time(set_time);
    
     printf("Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60));
  
