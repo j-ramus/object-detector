@@ -8,10 +8,10 @@
 #include "alarm.h"
 #include "display.h"
 
-#define GPIO_SENSE_INPUT    GPIO_NUM_4
+#define GPIO_SENSE_INPUT    GPIO_NUM_33
 #define GPIO_INC_TIME       GPIO_NUM_18
 #define GPIO_DEC_TIME       GPIO_NUM_17
-#define GPIO_BRIGHTNESS     GPIO_NUM_15
+#define GPIO_BRIGHTNESS     GPIO_NUM_19
 #define ESP_INTR_FLAG_DEFAULT 0
 
 //time adjustment constants in seconds
@@ -63,6 +63,19 @@ static void IRAM_ATTR brightness_isr_handler(void* arg)
     vTaskNotifyGiveFromISR(brightness_handle, NULL);
 }
 
+//-------------- Countdown Timer -------------------------
+
+static void countdown_timer_callback(TimerHandle_t xTimer)
+{
+    if (countdown > 0) {
+        countdown--;
+        display_update_time(countdown);
+    }
+    if (countdown <= 0) {
+        xTimerStop(xTimer, 0);   // sense_task while-loop exits on next 50ms poll
+    }
+}
+
 
 /*-------------------------- Tasks Handlers ---------------------------------------------*/
 
@@ -73,6 +86,11 @@ static void sense_task(void* arg)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
+        // 
+// duplicated this here, but inverted to prevent bounce when reenabled
+        if (gpio_get_level(GPIO_SENSE_INPUT) != 0) {
+            continue;   //object not present
+        }
 
         //disable incremental time ISRs
         gpio_intr_disable(GPIO_INC_TIME);
@@ -214,6 +232,13 @@ void app_main(void)
     xTaskCreate(brightness_task, "brightness_task", 2048, NULL, 9, &brightness_handle);
     xTaskCreate(inc_time_task, "inc_time_task", 2048, NULL, 8, &inc_time_handle);
     xTaskCreate(dec_time_task, "dec_time_task", 2048, NULL, 8, &dec_time_handle);
+
+
+    
+    countdown_timer = xtimercreate("countdown", pdms_to_ticks(1000),
+                                    pdtrue, null, countdown_timer_callback);
+
+
 
    /*---------------------------------- ISR Config ---------------------------------------*/   
     //install gpio isr service
