@@ -6,10 +6,10 @@
 #include "driver/gpio.h"
 #include "freertos/timers.h" //FIXME: timer library 
 
-#define GPIO_SENSE_INPUT    GPIO_NUM_4
+#define GPIO_SENSE_INPUT    GPIO_NUM_33
 #define GPIO_INC_TIME       GPIO_NUM_18
 #define GPIO_DEC_TIME       GPIO_NUM_17
-#define GPIO_BRIGHTNESS     GPIO_NUM_15
+#define GPIO_BRIGHTNESS     GPIO_NUM_19
 #define ESP_INTR_FLAG_DEFAULT 0
 
 //time adjustment constants in seconds
@@ -62,6 +62,19 @@ static void IRAM_ATTR dec_time_isr_handler(void* arg)
 static void IRAM_ATTR brightness_isr_handler(void* arg)
 {
     vTaskNotifyGiveFromISR(brightness_handle, NULL);
+}
+
+//-------------- Countdown Timer -------------------------
+
+static void countdown_timer_callback(TimerHandle_t xTimer)
+{
+    if (countdown > 0) {
+        countdown--;
+        display_update_time(countdown);
+    }
+    if (countdown <= 0) {
+        xTimerStop(xTimer, 0);   // sense_task while-loop exits on next 50ms poll
+    }
 }
 
 
