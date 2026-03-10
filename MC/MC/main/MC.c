@@ -4,7 +4,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
-#include "freertos/timers.h" //FIXME: timer library 
+#include "freertos/timers.h"
+#include "alarm.h"
+#include "display.h"
 
 #define GPIO_SENSE_INPUT    GPIO_NUM_33
 #define GPIO_INC_TIME       GPIO_NUM_18
@@ -17,7 +19,6 @@
 #define INCREMENTAL_TIME     30
 #define MAX_TIME             600
 #define MIN_TIME             30
-
 
 //globle time and countdown variable 
 int set_time;
@@ -32,8 +33,6 @@ static TaskHandle_t sense_handle = NULL;
 static TaskHandle_t inc_time_handle = NULL;
 static TaskHandle_t dec_time_handle = NULL;
 static TaskHandle_t brightness_handle = NULL;
-
-TimerHandle_t countdown_timer; //FIXME: timer internal
 
 /*--------------------------  ISR Handlers ---------------------------------------------*/
 //ISR handler, will be called when the interrupt occurs
@@ -98,47 +97,53 @@ static void sense_task(void* arg)
         gpio_intr_disable(GPIO_DEC_TIME);
         gpio_intr_disable(GPIO_SENSE_INPUT);
 
-        //TODO: start countdown
-        printf("countdown start\n");
-        printf("Object detected! countdown started...\n");
-        
-// Added 3/9/26
-        current_mode = DISPLAY_MODE_COUNTDOWN;
-        display_set_mode(DISPLAY_MODE_COUNTDOWN);
-        xTimerStart(countdown_timer, 0);
+        display_set_mode(DISPLAY_MODE_COUNTDOWN); // start countdown
+        printf("countdown start\n"); //TODO: for debugging
 
-        while (countdown > 0) {
+        printf("Object detected! countdown started...\n"); //TODO: for debugging
+
+        while (countdown > 0) { //FIXME: link countdown var with component
             vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
             if(gpio_get_level(GPIO_SENSE_INPUT) == 0){
                 continue;
             }
+
            else {
-                //TODO: Pause countdown
-                printf("toggle countdown\n");
-                //TODO: toggle alarm
-                printf("toggle alarm\n");
+                display_set_mode(DISPLAY_MODE_COUNTDOWN); // pause countdown
+                printf("toggle countdown\n"); //TODO: for debugging
+
+                alarm_start();
+                printf("toggle alarm\n"); //TODO: for debugging
+
                 while (gpio_get_level(GPIO_SENSE_INPUT) != 0){
                     vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
-                    printf("REPLACE OBJECT!!\n"); //TODO: print to LCD
+                    display_set_mode(DISPLAY_MODE_PAUSED); //pause countdown and prompt object to be replaced
+                    printf("REPLACE OBJECT!!\n"); //TODO: for debugging
                 }
-                //TODO: resume countdown
-                printf("toggle countdown\n");
-                //TODO: toggle alarm
-                printf("toggle alarm\n");
+
+                display_set_mode(DISPLAY_MODE_COUNTDOWN); // resume countdown
+                printf("toggle countdown\n"); //TODO: for debugging
+
+                alarm_stop();
+                printf("toggle alarm\n"); //TODO: for debugging
            }
         }
         
+        //if timer is finished, prompt to remove object, wait untill
         while (gpio_get_level(GPIO_SENSE_INPUT) == 0){
            vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
-             printf("Countdown up, REMOVE OBJECT!!\n"); //TODO: print to LCD
-           }
+            
+            display_set_mode(DISPLAY_MODE_DONE); //print "remove object"
+             printf("Countdown up, REMOVE OBJECT!!\n"); //TODO: for debugging
+            }
+    }
         
         //enable incremental time ISRs
         gpio_intr_enable(GPIO_INC_TIME);
         gpio_intr_enable(GPIO_DEC_TIME);
         gpio_intr_enable(GPIO_SENSE_INPUT);
-    }
 }
+
 
 static void inc_time_task(void* arg)
 
@@ -148,21 +153,16 @@ static void inc_time_task(void* arg)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
-
-        // If pin is hi,  trigger was release bounce, not real press
-        if (gpio_get_level(GPIO_INC_TIME) != 0) {
-            ulTaskNotifyTake(pdTRUE, 0);
-            continue;
-        }
-
         
-        printf("in inc_time task...\n"); //FIXME: remove print for final code
+        printf("in inc_time task...\n"); //TODO: for debugging
 
-        if(current_mode == DISPLAY_MODE_SETTING && set_time < MAX_TIME){
+
+        //increment and update timer
+        if(set_time < MAX_TIME){
         set_time = set_time + INCREMENTAL_TIME;
-        countdown = set_time; 
-        display_update_time(set_time); // Just added this part, the rest of this should be good.
-        printf("Time increased! Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60)); //FIXME: remove print for final code
+        display_update_time(set_time);
+        
+        printf("Time increased! Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60)); //TODO: for debugging
         }
     
     }
@@ -177,14 +177,14 @@ static void dec_time_task(void* arg)
         vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
 
         
-        printf("in dec_time task...\n"); //FIXME: remove print for final code
+        printf("in dec_time task...\n"); //TODO: for debugging
 
+        //decrement and update timer
         if(set_time > MIN_TIME){
         set_time = set_time - INCREMENTAL_TIME;
-        countdown = set_time;
         display_update_time(set_time);
         
-        printf("Time decreased! Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60)); //FIXME: remove print for final code
+        printf("Time decreased! Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60)); //TODO: for debugging
         }
     
     }
@@ -197,12 +197,7 @@ static void brightness_task(void* arg)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         vTaskDelay(pdMS_TO_TICKS(50));  // debounce delay
-        countdown -= 1; //FIXME: HERE FOR TESTING, REMOVE!!
-        printf("countdown dec, count: %d", countdown);
-
-       //TODO: call cycle brightness command
-       printf("in brightness task...\n");
-
+        display_cycle_brightness();     // cycle brightness
     }
 }
 
@@ -255,12 +250,15 @@ void app_main(void)
 
     while(gpio_get_level(GPIO_SENSE_INPUT) == 0){
    
-        printf("Remove Object\n");      //FIXME: Print to LCD
+        display_set_mode(DISPLAY_MODE_DONE); //print "remove object"
+        printf("Remove Object\n");      //TODO: for debugging
     }
 
-    //TODO: link set_time to johns code
+    //initalize display
+    display_init(); 
+
+    //set default value for timer and update value in diplay component
     set_time = DEFAULT_TIME;
-    countdown = set_time;
     display_update_time(set_time);
    
     printf("Set Time:\n%02d:%02d\n", (set_time/60), (set_time%60));
@@ -273,6 +271,8 @@ void app_main(void)
 
    //infinite loop to wait for interrupts
     for(;;) {
+        display_set_mode(DISPLAY_MODE_SETTING); //display set time on LCD
+        printf("set time, wating for object\n"); //TODO: for debugging
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
